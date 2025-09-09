@@ -208,11 +208,11 @@ Can you generate a PDF of data/xml/factura.xml?
 ### FileSystem
 
 ```bash
-Lista todos los archivos que hay en el directorio data/testing.
+Lista todos los archivos que hay en el directorio /data/testing.
 ```
 
 ```bash
-Read the complete contents of the file data/testing/file1.txt.
+Read the complete contents of the /file data/testing/file1.txt.
 ```
 
 ### GitHub
