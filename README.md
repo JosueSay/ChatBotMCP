@@ -23,81 +23,90 @@ Maintains conversational context, can auto/manuelly call tools, and logs session
 
 ## 🔧 Installation
 
-```bash
-git clone <REPO_URL>
-cd <REPO_DIR>
+When starting the chatbot, you can now run **multiple MCP servers at the same time**.  
+This allows you to combine local tools (e.g., FEL) with external integrations like **Filesystem** and **GitHub**.
 
-python3.12 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-````
+### Environment Variables
 
-Create your env file:
-
-```bash
-cp .env.example .env
-```
-
-Use **placeholders** and **absolute WSL paths** for MCP:
+Edit your `.env` with the following variables:
 
 ```env
-# ---- Antrhopic ----
+# ---- Keys ----
 ANTHROPIC_API_KEY=your_key
-ANTHROPIC_MODEL=claude-sonnet-4-20250514 # optional other model https://docs.anthropic.com/en/api/models-list
+ANTHROPIC_MODEL=claude-sonnet-4-20250514 # optional, other models: https://docs.anthropic.com/en/api/models-list
+GITHUB_TOKEN=your_token # Personal Access Token (fine-grained or classic)
 
 # ---- MCPS ----
 MCP_FEL_CMD="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py"
-MCP_FEL_URL=url_mcp # pending
-ROUTER_DEBUG=0 # 1: active 0:deactive -> debug chat reasoning
+MCP_URL=url_mcp # pending
 
-# ---- Chat Logs ----
+# Multiple MCP servers (comma-separated)
+# Recommended order: FEL (local), Filesystem (Docker), GitHub (Docker)
+MCP_CMDS="/ABSOLUTE/PATH/venv/bin/python /ABSOLUTE/PATH/servers/fel_mcp_server/server_stdio.py,docker run --rm -i -v /ABSOLUTE/PATH/data/testing:/data node:22 npx -y @modelcontextprotocol/server-filesystem /data,docker run --rm -i -e GITHUB_TOKEN node:22 npx -y @modelcontextprotocol/server-github"
+
+# ---- Chat Config ----
 LOG_DIR=/ABSOLUTE/PATH/TO/REPO/data/logs/sessions
+ROUTER_DEBUG=0 # 1: active | 0: inactive
 ```
 
+### GitHub MCP
+
+To use the **GitHub MCP** you need:
+
+1. Create a **personal token** (fine-grained or classic).
+
+2. Clone the official MCP servers repository to an absolute path:
+
+   ```bash
+   git clone https://github.com/modelcontextprotocol/servers.git
+   ```
+
+3. Replace `/ABSOLUTE/PATH/servers` in your `.env` with the actual path to the cloned repo.
+
+This way, the chatbot can launch and orchestrate multiple MCPs in parallel.
+
 ## 🚀 Usage
+
+Start the chatbot from the project root:
 
 ```bash
 python apps/cli/chat.py
 ```
 
-You’ll see:
+You will see:
 
 ```bash
-──────────── Chatbot (CLI) + MCP ────────────
-commands: /exit | /clear | /tools
+───────────────────── Claude Console + MCP (FEL) ──────────────────────
+commands: /exit | /clear | /tools | fel_validate <xml> | fel_render <xml> | fel_batch <dir_xml>
 You ›
 ```
 
-### Discover tools (from connected MCP servers)
+### Example
 
-```bash
+```text
 You › /tools
+MCP Tools
+name         | description                                  | required args
+-------------|----------------------------------------------|---------------
+fel_validate | Validate FEL XML totals and required fields  | xml_path
+fel_render   | Render branded PDF from FEL XML              | xml_path
+fel_batch    | Render directory of FEL XMLs -> manifest.json | dir_xml
 ```
-
-### Example prompts (FEL server)
-
-**Validate XML:**
 
 ```bash
-Call the MCP tool FEL:fel_validate with EXACTLY this JSON:
-{"xml_path":"/ABSOLUTE/PATH/TO/REPO/data/xml/factura.xml"}
+You › puedes validar precios de data/xml/factura.xml?
+La validación de la factura fue exitosa. Los totales calculados son:
+
+ • Subtotal: Q8,010.59
+ • IVA (12%): Q961.27
+ • Total: Q8,971.86
+
+No se encontraron errores en los precios ni en los campos requeridos.
 ```
 
-**Render PDF (no logo):**
+If absolute paths for the official MCP servers were set, you can now have more tools available: **FEL + System Files + GitHub**.
 
-```bash
-Call the MCP tool FEL:fel_render with EXACTLY this JSON:
-{"xml_path":"/ABSOLUTE/PATH/TO/REPO/data/xml/factura.xml","out_path":"/ABSOLUTE/PATH/TO/REPO/data/out/testing.pdf"}
-```
-
-**Batch:**
-
-```bash
-Call the MCP tool FEL:fel_batch with EXACTLY this JSON:
-{"dir_xml":"/ABSOLUTE/PATH/TO/REPO/data/xml","out_dir":"/ABSOLUTE/PATH/TO/REPO/data/out/batch"}
-```
-
-> Always use **absolute WSL paths** (`/mnt/...`) when running on Windows via WSL.
+![Official MCP Tools in Action](./images/mcp_tools.png)
 
 ## 📝 Logs
 
